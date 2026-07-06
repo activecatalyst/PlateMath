@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0B0B0D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Plate Math">
+<title>Plate Math</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#0B0B0D;
+    --bg2:#151518;
+    --bg3:#1D1D21;
+    --line:#2A2A2F;
+    --text:#F5F5F2;
+    --dim:#8A8A90;
+    --dimmer:#5A5A60;
+    --accent:#F26419;
+    --accent-dim:#5c2a10;
+    --plate45:#C1440E;
+    --plate35:#D9822B;
+    --plate25:#7C8A9B;
+    --plate10:#6B6E73;
+    --plate5:#54575c;
+    --plate2_5:#43464a;
+    --danger:#B33A3A;
+    --good:#3AA66B;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    overflow:hidden;
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  #app{
+    height:100vh; height:100dvh;
+    display:flex; flex-direction:column;
+    max-width:560px; margin:0 auto;
+    padding:10px 14px 14px;
+  }
+  button{font-family:inherit; color:inherit; border:none; background:none; -webkit-appearance:none;}
+  button:active{ opacity:0.7; }
+
+  /* ---- top bar ---- */
+  #topbar{ display:flex; align-items:center; gap:8px; }
+  #recallRow{
+    flex:1; display:flex; gap:8px; overflow-x:auto; padding:4px 2px;
+    scrollbar-width:none;
+  }
+  #recallRow::-webkit-scrollbar{ display:none; }
+  .chip{
+    flex:0 0 auto;
+    background:var(--bg3); border:1px solid var(--line);
+    color:var(--text); padding:10px 16px; border-radius:20px;
+    font-size:16px; font-weight:600; white-space:nowrap;
+  }
+  .chip.alt{ border-color:var(--accent); color:var(--accent); }
+  #gearBtn{
+    flex:0 0 auto; width:44px; height:44px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--bg3); font-size:20px; border:1px solid var(--line);
+  }
+
+  /* ---- weight display ---- */
+  #weightWrap{
+    text-align:center; padding:6px 0 2px;
+  }
+  #unitLabel{
+    color:var(--dim); font-size:14px; letter-spacing:2px; font-weight:700;
+  }
+  #weightDisplay{
+    font-size:min(22vw,96px); font-weight:800; line-height:1;
+    color:var(--text); letter-spacing:-2px; padding:4px 0;
+    display:block; width:100%;
+  }
+  #weightDisplay .unit{ font-size:0.32em; color:var(--dim); margin-left:6px; font-weight:700;}
+  #rampLabel{
+    color:var(--accent); font-weight:700; font-size:15px; min-height:20px; letter-spacing:1px;
+  }
+
+  #stepperRow{
+    display:flex; gap:6px; justify-content:center; margin-top:2px;
+  }
+  .stepBtn{
+    background:var(--bg3); border:1px solid var(--line);
+    border-radius:12px; padding:12px 0; flex:1; max-width:70px;
+    font-size:15px; font-weight:700; color:var(--text);
+  }
+  .stepBtn.minus{ color:var(--dim); }
+
+  /* ---- barbell ---- */
+  #barbellWrap{ flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:4px 0; }
+  #barbellSvg{ width:100%; height:100%; max-height:220px; }
+
+  /* ---- breakdown ---- */
+  #breakdown{
+    text-align:center; font-size:17px; font-weight:600; color:var(--text);
+    padding:6px 4px; min-height:26px; letter-spacing:0.3px;
+  }
+  #breakdown .lbl{ color:var(--dim); font-weight:700; letter-spacing:1px; margin-right:6px; }
+  #altRow{
+    display:flex; gap:10px; justify-content:center; padding:0 0 6px; min-height:0;
+  }
+  #altRow .chip{ font-size:15px; padding:9px 14px; }
+
+  /* ---- ramp bar ---- */
+  #rampBar{
+    display:none; align-items:center; gap:10px; padding:8px 4px;
+    border-top:1px solid var(--line);
+  }
+  #rampBar.active{ display:flex; }
+  #rampBar button.navBtn{
+    width:48px; height:48px; border-radius:12px; background:var(--bg3);
+    font-size:22px; border:1px solid var(--line); flex:0 0 auto;
+  }
+  #rampDots{ flex:1; display:flex; justify-content:center; gap:6px; }
+  .rdot{ width:8px; height:8px; border-radius:50%; background:var(--line); }
+  .rdot.on{ background:var(--accent); width:18px; border-radius:5px; }
+  .rdot.done{ background:var(--dimmer); }
+
+  /* ---- bottom actions ---- */
+  #actions{
+    display:flex; gap:10px; padding-top:8px;
+  }
+  #actions button{
+    flex:1; padding:16px 0; border-radius:16px; font-size:17px; font-weight:700;
+    background:var(--bg3); border:1px solid var(--line);
+  }
+  #rampToggleBtn.on{ background:var(--accent); color:#111; border-color:var(--accent); }
+  #numpadBtn{ background:var(--bg2); }
+
+  #modeRow{ display:flex; gap:8px; padding-top:8px; }
+  #modeRow button{
+    flex:1; padding:12px 0; border-radius:14px; font-size:14px; font-weight:700;
+    background:var(--bg2); border:1px solid var(--line); color:var(--dim);
+  }
+
+  /* ---- shared mode overlay bits ---- */
+  .modeField{ margin-bottom:16px; }
+  .modeField label{ display:block; font-size:12.5px; letter-spacing:1px; text-transform:uppercase; color:var(--dim); margin-bottom:6px; font-weight:700; }
+  .modeField input[type=number]{
+    width:100%; background:var(--bg3); border:1px solid var(--line); border-radius:12px;
+    color:var(--text); font-size:24px; font-weight:700; padding:12px 14px; text-align:center;
+  }
+  .bigResult{ text-align:center; font-size:min(18vw,72px); font-weight:800; color:var(--accent); padding:10px 0; }
+  .subResult{ text-align:center; color:var(--dim); font-size:15px; font-weight:600; min-height:20px; }
+  .pctChipRow{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; padding:6px 0 4px; }
+  .pctChip{
+    background:var(--bg3); border:1px solid var(--line); border-radius:14px;
+    padding:14px 0; font-size:17px; font-weight:700; flex:1 1 28%; min-width:80px;
+  }
+  .pctChip.sel{ background:var(--accent); color:#111; border-color:var(--accent); }
+  .liftPicker{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .liftBtn{
+    background:var(--bg3); border:1px solid var(--line); border-radius:12px;
+    padding:10px 14px; font-size:14px; font-weight:600;
+  }
+  .liftBtn.sel{ background:var(--accent); color:#111; border-color:var(--accent); }
+  .addLiftBtn{ background:var(--bg2); color:var(--dim); border:1px dashed var(--line); border-radius:12px; padding:10px 14px; font-size:14px; }
+  .diffBox{ background:var(--bg3); border:1px solid var(--line); border-radius:14px; padding:14px; margin-top:6px; }
+  .diffBox .diffTitle{ font-size:12.5px; letter-spacing:1px; text-transform:uppercase; color:var(--dim); font-weight:700; margin-bottom:4px; }
+  .diffBox .diffVal{ font-size:18px; font-weight:700; }
+  .diffBox.remove .diffVal{ color:var(--danger); }
+  .diffBox.add .diffVal{ color:var(--good); }
+  .miniBreak{ text-align:center; font-size:14px; color:var(--dim); margin-top:4px; }
+  .dbAltRow{ display:flex; gap:10px; justify-content:center; padding:10px 0; }
+
+  /* ---- numpad overlay ---- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.88);
+    display:none; z-index:50; flex-direction:column;
+    padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+    backdrop-filter:blur(6px);
+  }
+  .overlay.show{ display:flex; }
+  .overlayHeader{ display:flex; align-items:center; justify-content:space-between; padding:14px 4px; }
+  .overlayHeader h2{ font-size:18px; margin:0; letter-spacing:1px; color:var(--dim); font-weight:700; text-transform:uppercase; }
+  .closeBtn{ font-size:22px; padding:6px 10px; color:var(--dim); }
+
+  #numDisplay{
+    text-align:center; font-size:64px; font-weight:800; padding:20px 0; color:var(--accent);
+  }
+  #numGrid{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:10px; flex:1;
+  }
+  #numGrid button{
+    background:var(--bg3); border:1px solid var(--line); border-radius:16px;
+    font-size:30px; font-weight:700;
+  }
+  #numGrid button.wide{ font-size:20px; }
+  #numGrid button.go{ background:var(--accent); color:#111; }
+
+  /* ---- settings overlay ---- */
+  #settingsBody{ overflow-y:auto; flex:1; padding-bottom:20px; }
+  .sect{ margin-bottom:22px; }
+  .sect h3{ font-size:13px; text-transform:uppercase; letter-spacing:1.5px; color:var(--dim); margin:0 0 10px; }
+  .optGrid{ display:flex; flex-wrap:wrap; gap:8px; }
+  .optBtn{
+    background:var(--bg3); border:1px solid var(--line); border-radius:12px;
+    padding:12px 14px; font-size:15px; font-weight:600;
+  }
+  .optBtn.sel{ background:var(--accent); color:#111; border-color:var(--accent); }
+  .row{ display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line); }
+  .row:last-child{ border-bottom:none; }
+  .row .lname{ font-size:16px; font-weight:600; }
+  .countCtl{ display:flex; align-items:center; gap:10px; }
+  .countCtl button{ width:36px; height:36px; border-radius:8px; background:var(--bg3); border:1px solid var(--line); font-size:18px; font-weight:700; }
+  .countCtl .cval{ min-width:28px; text-align:center; font-weight:700; font-size:16px; }
+  .swatch{ width:14px; height:14px; border-radius:3px; margin-right:8px; display:inline-block; vertical-align:middle; }
+  .toggleSw{
+    width:52px; height:30px; border-radius:15px; background:var(--bg3); border:1px solid var(--line);
+    position:relative; flex:0 0 auto;
+  }
+  .toggleSw .knob{ position:absolute; top:2px; left:2px; width:24px; height:24px; border-radius:50%; background:var(--dim); transition:left .15s; }
+  .toggleSw.on{ background:var(--accent-dim); border-color:var(--accent); }
+  .toggleSw.on .knob{ left:24px; background:var(--accent); }
+  .customWt{ display:flex; align-items:center; gap:8px; }
+  .customWt input{
+    background:var(--bg3); border:1px solid var(--line); border-radius:10px; color:var(--text);
+    padding:10px; font-size:16px; width:90px; text-align:center;
+  }
+  .rampPctRow{ display:flex; align-items:center; gap:8px; padding:8px 0; }
+  .rampPctRow label{ flex:1; font-size:15px; color:var(--dim); }
+  .rampPctRow input{
+    background:var(--bg3); border:1px solid var(--line); border-radius:10px; color:var(--text);
+    padding:8px; font-size:15px; width:64px; text-align:center;
+  }
+  .hint{ color:var(--dimmer); font-size:12.5px; line-height:1.5; margin-top:6px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="topbar">
+    <div id="recallRow"></div>
+    <button id="gearBtn" aria-label="Settings">⚙</button>
+  </div>
+
+  <div id="weightWrap">
+    <div id="unitLabel">TARGET WEIGHT</div>
+    <button id="weightDisplay">0<span class="unit">lb</span></button>
+    <div id="rampLabel"></div>
+    <div id="stepperRow">
+      <button class="stepBtn minus" data-d="-45">-45</button>
+      <button class="stepBtn minus" data-d="-10">-10</button>
+      <button class="stepBtn minus" data-d="-5">-5</button>
+      <button class="stepBtn minus" data-d="-2.5">-2.5</button>
+      <button class="stepBtn" data-d="2.5">+2.5</button>
+      <button class="stepBtn" data-d="5">+5</button>
+      <button class="stepBtn" data-d="10">+10</button>
+      <button class="stepBtn" data-d="45">+45</button>
+    </div>
+  </div>
+
+  <div id="barbellWrap">
+    <svg id="barbellSvg" viewBox="0 0 800 240" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+  <div id="breakdown"></div>
+  <div id="altRow"></div>
+
+  <div id="rampBar">
+    <button class="navBtn" id="rampPrev">‹</button>
+    <div id="rampDots"></div>
+    <button class="navBtn" id="rampNext">›</button>
+  </div>
+
+  <div id="actions">
+    <button id="rampToggleBtn">Warmup Ramp</button>
+    <button id="numpadBtn">Enter Weight</button>
+  </div>
+  <div id="modeRow">
+    <button id="rmModeBtn">% of 1RM</button>
+    <button id="dbModeBtn">Dumbbell</button>
+    <button id="stripModeBtn">Superset</button>
+  </div>
+
+</div>
+
+<!-- % of 1RM overlay -->
+<div class="overlay" id="rmOverlay">
+  <div class="overlayHeader"><h2>% of 1RM</h2><button class="closeBtn" data-close="rmOverlay">✕</button></div>
+  <div id="settingsBodyRM" style="overflow-y:auto; flex:1;">
+    <div class="liftPicker" id="liftPicker"></div>
+    <div class="modeField">
+      <label>1RM (<span id="rmUnitLabel">lb</span>)</label>
+      <input type="number" id="rmInput" step="0.5" placeholder="0">
+    </div>
+    <div class="pctChipRow" id="rmPctRow"></div>
+    <div class="bigResult" id="rmResult">—</div>
+    <div class="subResult" id="rmSub"></div>
+  </div>
+</div>
+
+<!-- Dumbbell overlay -->
+<div class="overlay" id="dbOverlay">
+  <div class="overlayHeader"><h2>Dumbbell Match</h2><button class="closeBtn" data-close="dbOverlay">✕</button></div>
+  <div style="overflow-y:auto; flex:1;">
+    <div class="modeField">
+      <label>Target Weight (<span id="dbUnitLabel">lb</span> per hand)</label>
+      <input type="number" id="dbInput" step="0.5" placeholder="0">
+    </div>
+    <div class="bigResult" id="dbResult">—</div>
+    <div class="subResult" id="dbSub"></div>
+    <div class="dbAltRow" id="dbAltRow"></div>
+    <div class="modeField" style="margin-top:20px;">
+      <label>Rack Increments (comma separated)</label>
+      <input type="text" id="dbIncInput" style="font-size:15px; font-weight:600; text-align:left;">
+    </div>
+  </div>
+</div>
+
+<!-- Superset / Strip Order overlay -->
+<div class="overlay" id="stripOverlay">
+  <div class="overlayHeader"><h2>Superset Strip Order</h2><button class="closeBtn" data-close="stripOverlay">✕</button></div>
+  <div style="overflow-y:auto; flex:1;">
+    <div style="display:flex; gap:10px;">
+      <div class="modeField" style="flex:1;">
+        <label>Weight A</label>
+        <input type="number" id="stripAInput" step="0.5" placeholder="0">
+        <div class="miniBreak" id="stripABreak"></div>
+      </div>
+      <div class="modeField" style="flex:1;">
+        <label>Weight B</label>
+        <input type="number" id="stripBInput" step="0.5" placeholder="0">
+        <div class="miniBreak" id="stripBBreak"></div>
+      </div>
+    </div>
+    <div class="subResult" id="stripHeadline" style="font-size:16px; padding:6px 0 10px;"></div>
+    <div class="diffBox remove">
+      <div class="diffTitle">Strip Off (per side)</div>
+      <div class="diffVal" id="stripRemove">—</div>
+    </div>
+    <div class="diffBox add" style="margin-top:10px;">
+      <div class="diffTitle">Add On (per side)</div>
+      <div class="diffVal" id="stripAdd">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- Numpad overlay -->
+<div class="overlay" id="numOverlay">
+  <div class="overlayHeader"><h2>Enter Weight</h2><button class="closeBtn" data-close="numOverlay">✕</button></div>
+  <div id="numDisplay">0</div>
+  <div id="numGrid">
+    <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+    <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+    <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+    <button data-k=".">.</button><button data-k="0">0</button><button data-k="back" class="wide">⌫</button>
+    <button data-k="clear" class="wide">Clear</button><button data-k="go" class="go wide" style="grid-column:span 2;">Set</button>
+  </div>
+</div>
+
+<!-- Settings overlay -->
+<div class="overlay" id="settingsOverlay">
+  <div class="overlayHeader"><h2>Settings</h2><button class="closeBtn" data-close="settingsOverlay">✕</button></div>
+  <div id="settingsBody">
+
+    <div class="sect">
+      <h3>Units</h3>
+      <div class="optGrid" id="unitOpts">
+        <button class="optBtn" data-unit="lb">lb</button>
+        <button class="optBtn" data-unit="kg">kg</button>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h3>Bar</h3>
+      <div class="optGrid" id="barOpts"></div>
+      <div class="customWt" id="customBarWrap" style="margin-top:10px; display:none;">
+        <label>Custom:</label><input type="number" id="customBarInput" step="0.5">
+        <span id="customBarUnit"></span>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h3>Collars</h3>
+      <div class="row">
+        <div class="lname">Competition collars (+5 lb / +2.5 kg)</div>
+        <button class="toggleSw" id="collarToggle"><div class="knob"></div></button>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h3>Plate Inventory <span style="color:var(--dimmer);font-weight:500;">(pairs owned per plate)</span></h3>
+      <div id="inventoryList"></div>
+      <div class="hint">Counts are pairs (one for each side). The calculator will never use more plates than you own.</div>
+    </div>
+
+    <div class="sect">
+      <h3>Warmup Ramp %</h3>
+      <div id="rampPctList"></div>
+      <div class="hint">Percentages of your working weight, in order. Edit anytime.</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------------- constants ---------------- */
+var LB_DENOMS = [45,35,25,10,5,2.5];
+var KG_DENOMS = [25,20,15,10,5,2.5,1.25];
+
+var PLATE_COLOR = {
+  45:"var(--plate45)", 25:"var(--plate25)",
+  35:"var(--plate35)", 20:"var(--plate35)",
+  15:"var(--plate25)",
+  10:"var(--plate10)", 5:"var(--plate5)",
+  2.5:"var(--plate2_5)", 1.25:"var(--plate2_5)"
+};
+
+var BAR_OPTIONS = [
+  {id:"standard", label:"Standard", lb:45, kg:20},
+  {id:"light", label:"Lightweight", lb:35, kg:15},
+  {id:"womens", label:"Women's", lb:33, kg:15},
+  {id:"ez", label:"EZ Curl", lb:25, kg:11},
+  {id:"trap", label:"Trap / Hex", lb:60, kg:27},
+  {id:"custom", label:"Custom", lb:null, kg:null}
+];
+
+var DEFAULT_STATE = {
+  unit:"lb",
+  barId:"standard",
+  customBarLb:45,
+  customBarKg:20,
+  collars:false,
+  rampPct:[0,40,60,80,90],
+  rampReps:[10,8,5,3,1],
+  inventory:{
+    lb:{45:6,35:2,25:3,10:4,5:4,2.5:4},
+    kg:{25:6,20:2,15:2,10:3,5:4,2.5:4,1.25:4}
+  },
+  recall:[],
+  lifts:[
+    {name:"Squat", lb:null, kg:null},
+    {name:"Bench", lb:null, kg:null},
+    {name:"Deadlift", lb:null, kg:null}
+  ],
+  activeLift:0,
+  dbIncrements:{
+    lb:[5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100],
+    kg:[2.5,5,7.5,10,12.5,15,17.5,20,22.5,25,27.5,30,32.5,35,40,45,50]
+  }
+};
+
+var STORE_KEY = "plateMathState_v1";
+
+/* ---------------- state ---------------- */
+var state = loadState();
+var currentWeight = null;   // target weight, in current unit
+var rampActive = false;
+var rampSteps = [];
+var rampIndex = 0;
+var numpadBuffer = "";
+
+function loadState(){
+  try{
+    var raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return JSON.parse(JSON.stringify(DEFAULT_STATE));
+    var parsed = JSON.parse(raw);
+    // shallow-merge defaults for any missing keys (future-proofing)
+    var merged = JSON.parse(JSON.stringify(DEFAULT_STATE));
+    for(var k in parsed){ merged[k] = parsed[k]; }
+    if(!merged.inventory) merged.inventory = DEFAULT_STATE.inventory;
+    return merged;
+  }catch(e){ return JSON.parse(JSON.stringify(DEFAULT_STATE)); }
+}
+function saveState(){
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+}
+
+function denomsForUnit(u){ return u==="kg" ? KG_DENOMS : LB_DENOMS; }
+
+function currentBarWeight(){
+  var opt = BAR_OPTIONS.filter(function(o){return o.id===state.barId;})[0];
+  if(!opt || opt.id==="custom"){
+    return state.unit==="kg" ? state.customBarKg : state.customBarLb;
+  }
+  return state.unit==="kg" ? opt.kg : opt.lb;
+}
+function collarWeight(){
+  if(!state.collars) return 0;
+  return state.unit==="kg" ? 2.5 : 5;
+}
+
+/* ---------------- math core ---------------- */
+// scale factor to avoid float issues: quarter-unit integers
+var SCALE = 4;
+function toUnits(w){ return Math.round(w*SCALE); }
+function fromUnits(u){ return u/SCALE; }
+
+// Build full reachable-sum table for one side, given inventory (pairs owned) for unit.
+// refCombo (optional): a {denom:count} combo to minimize plate-swap distance against
+// (used by the superset strip-order feature). When omitted, cost == total plate count,
+// which yields the simplest (fewest-plate) combo for a fresh weight.
+// Returns Map(units -> {combo: {denom:count}, cost:n})
+function buildReachable(unit, refCombo){
+  var ref = refCombo || {};
+  var denoms = denomsForUnit(unit).slice().sort(function(a,b){return b-a;});
+  var inv = state.inventory[unit] || {};
+  var reachable = {}; // key: units sum -> {combo, cost}
+  reachable[0] = {combo:{}, cost:0};
+  denoms.forEach(function(d){
+    var maxPerSide = Math.floor((inv[d]||0));
+    if(maxPerSide<=0) return;
+    var dUnits = toUnits(d);
+    var refCount = ref[d]||0;
+    var next = {};
+    for(var key2 in reachable){
+      var base = reachable[key2];
+      for(var k=0;k<=maxPerSide;k++){
+        var ns = parseInt(key2,10) + dUnits*k;
+        var cost = base.cost + Math.abs(k-refCount);
+        if(next[ns]===undefined || next[ns].cost > cost){
+          var combo = {};
+          for(var dd in base.combo){ combo[dd]=base.combo[dd]; }
+          if(k>0) combo[d] = k;
+          next[ns] = {combo:combo, cost:cost};
+        }
+      }
+    }
+    reachable = next;
+  });
+  return reachable;
+}
+
+// Solve for a target total weight. Returns:
+// { ok:true, perSideCombo:{denom:count}, perSideUnits, total } on success
+// { ok:false, alternatives:[weight1, weight2] } on failure
+// refCombo (optional): prefer combos that reuse as many plates from this combo as
+// possible (minimizes swaps when re-loading the bar for a paired/superset weight).
+function solveWeight(targetWeight, unit, refCombo){
+  var bar = currentBarWeight();
+  var collar = collarWeight();
+  var base = bar + collar;
+  var perSideTarget = (targetWeight - base)/2;
+  var reachable = buildReachable(unit, refCombo);
+
+  if(perSideTarget < -1e-9){
+    // target below bar weight itself; nearest achievable are bar (and bar+min plate*2)
+    var sums = Object.keys(reachable).map(Number).sort(function(a,b){return a-b;});
+    var alts = sums.slice(0,2).map(function(u){ return base + 2*fromUnits(u); });
+    return {ok:false, alternatives: alts};
+  }
+
+  var targetUnits = toUnits(perSideTarget);
+  if(reachable[targetUnits]){
+    return {
+      ok:true,
+      perSideCombo: reachable[targetUnits].combo,
+      total: targetWeight
+    };
+  }
+  // find two nearest achievable sums
+  var sums = Object.keys(reachable).map(Number).sort(function(a,b){return a-b;});
+  var below=null, above=null;
+  for(var i=0;i<sums.length;i++){
+    if(sums[i] <= targetUnits) below = sums[i];
+    if(sums[i] >= targetUnits && above===null) above = sums[i];
+  }
+  var alts = [];
+  if(below!==null) alts.push(base + 2*fromUnits(below));
+  if(above!==null && above!==below) alts.push(base + 2*fromUnits(above));
+  // sort by closeness to target
+  alts.sort(function(a,b){ return Math.abs(a-targetWeight)-Math.abs(b-targetWeight); });
+  alts = alts.slice(0,2).sort(function(a,b){return a-b;});
+  return {ok:false, alternatives: alts};
+}
+
+// Snap an arbitrary weight (e.g. a warmup % of working weight) down to the nearest
+// weight actually loadable with the current bar/collar/inventory.
+function findNearestAchievableWeight(targetWeight, unit){
+  var bar = currentBarWeight();
+  var collar = collarWeight();
+  var base = bar + collar;
+  var perSideTarget = Math.max(0, (targetWeight - base)/2);
+  var reachable = buildReachable(unit);
+  var targetUnits = toUnits(perSideTarget);
+  var best = null;
+  for(var key in reachable){
+    var s = parseInt(key,10);
+    if(best===null || Math.abs(s-targetUnits) < Math.abs(best-targetUnits)) best = s;
+  }
+  if(best===null) return base;
+  return base + 2*fromUnits(best);
+}
+
+/* ---------------- rendering ---------------- */
+function fmtNum(n){
+  var r = Math.round(n*100)/100;
+  if(Math.abs(r - Math.round(r)) < 1e-6) return String(Math.round(r));
+  return (Math.round(r*4)/4).toString();
+}
+
+function comboToArray(combo){
+  var denoms = Object.keys(combo).map(Number).sort(function(a,b){return b-a;});
+  var arr = [];
+  denoms.forEach(function(d){
+    for(var i=0;i<combo[d];i++) arr.push(d);
+  });
+  return arr;
+}
+
+function renderBreakdown(result){
+  var bd = document.getElementById("breakdown");
+  var altRow = document.getElementById("altRow");
+  altRow.innerHTML = "";
+  if(result.ok){
+    var arr = comboToArray(result.perSideCombo);
+    if(arr.length===0){
+      bd.innerHTML = '<span class="lbl">PER SIDE:</span> bar only (no plates)';
+    } else {
+      bd.innerHTML = '<span class="lbl">PER SIDE:</span> ' + arr.map(fmtNum).join(" + ");
+    }
+  } else {
+    bd.innerHTML = '<span class="lbl">NOT ACHIEVABLE</span> — nearest options below';
+    result.alternatives.forEach(function(w){
+      var b = document.createElement("button");
+      b.className = "chip alt";
+      b.textContent = fmtNum(w) + " " + state.unit;
+      b.onclick = function(){ setWeight(w); };
+      altRow.appendChild(b);
+    });
+  }
+}
+
+function renderBarbell(result){
+  var svg = document.getElementById("barbellSvg");
+  var W=800, H=240, cy=120;
+  var sleeveLeft = 40, sleeveRight = W-40;
+  var collarW = state.collars ? 10:0;
+  var barThick = 14;
+
+  var html = "";
+  // sleeve bar line
+  html += '<line x1="'+sleeveLeft+'" y1="'+cy+'" x2="'+sleeveRight+'" y2="'+cy+'" stroke="#4a4a50" stroke-width="'+barThick+'" stroke-linecap="round"/>';
+
+  var combo = result.ok ? comboToArray(result.perSideCombo) : [];
+  var maxD = Math.max(45, denomsForUnit(state.unit)[0]);
+  var maxDiameter = 190, minDiameter=60;
+  var maxThick=34, minThick=10;
+
+  function plateSize(w){
+    var frac = Math.sqrt(w/maxD);
+    var d = minDiameter + (maxDiameter-minDiameter)*frac;
+    var t = minThick + (maxThick-minThick)*(w/maxD);
+    return {d:d,t:t};
+  }
+
+  // build from bar outward: collar first, then plates largest->smallest already sorted desc
+  var xLeft = sleeveLeft + 6;
+  var xRight = sleeveRight - 6;
+
+  // left collar
+  if(state.collars){
+    html += rectPlate(xLeft, cy, collarW, 40, "#8a8a90", null);
+    xLeft += collarW+2;
+  }
+  combo.forEach(function(w){
+    var sz = plateSize(w);
+    var color = PLATE_COLOR[w] || "var(--plate2_5)";
+    html += rectPlate(xLeft, cy, sz.t, sz.d, color, w);
+    xLeft += sz.t + 3;
+  });
+
+  if(state.collars){
+    xRight -= collarW+2;
+    html += rectPlate(xRight, cy, collarW, 40, "#8a8a90", null);
+  }
+  combo.forEach(function(w){
+    var sz = plateSize(w);
+    var color = PLATE_COLOR[w] || "var(--plate2_5)";
+    xRight -= sz.t+3;
+    html += rectPlate(xRight, cy, sz.t, sz.d, color, w, true);
+  });
+
+  svg.innerHTML = html;
+
+  function rectPlate(x, cy, t, d, color, label, alignRight){
+    var y = cy - d/2;
+    var xx = alignRight ? x : x;
+    var s = '<rect x="'+xx+'" y="'+y+'" width="'+t+'" height="'+d+'" rx="4" fill="'+color+'" stroke="rgba(0,0,0,0.4)" stroke-width="1.5"/>';
+    if(label!==null && t>16){
+      var fs = Math.min(15, t*0.9);
+      s += '<text x="'+(xx+t/2)+'" y="'+(cy)+'" font-size="'+fs+'" font-weight="700" fill="rgba(255,255,255,0.85)" text-anchor="middle" dominant-baseline="middle" transform="rotate(90 '+(xx+t/2)+' '+cy+')">'+fmtNum(label)+'</text>';
+    }
+    return s;
+  }
+}
+
+function renderRecall(){
+  var row = document.getElementById("recallRow");
+  row.innerHTML = "";
+  (state.recall||[]).forEach(function(w){
+    var b = document.createElement("button");
+    b.className = "chip";
+    b.textContent = fmtNum(w);
+    b.onclick = function(){ setWeight(w); };
+    row.appendChild(b);
+  });
+}
+
+function pushRecall(w){
+  var list = state.recall || [];
+  list = list.filter(function(x){ return Math.abs(x-w) > 1e-6; });
+  list.unshift(w);
+  list = list.slice(0,6);
+  state.recall = list;
+  saveState();
+  renderRecall();
+}
+
+function updateWeightDisplayEl(){
+  var el = document.getElementById("weightDisplay");
+  el.innerHTML = fmtNum(currentWeight) + '<span class="unit">'+state.unit+'</span>';
+}
+
+function recompute(pushToRecall){
+  if(currentWeight===null) currentWeight = currentBarWeight();
+  updateWeightDisplayEl();
+  var result = solveWeight(currentWeight, state.unit);
+  renderBreakdown(result);
+  renderBarbell(result);
+  if(pushToRecall && result.ok){
+    pushRecall(currentWeight);
+  }
+  return result;
+}
+
+function setWeight(w){
+  exitRamp();
+  currentWeight = Math.max(0, w);
+  recompute(true);
+}
+
+function adjustWeight(delta){
+  exitRamp();
+  currentWeight = Math.max(0, (currentWeight||0) + delta);
+  recompute(true);
+}
+
+/* ---------------- warmup ramp ---------------- */
+function buildRamp(workingWeight){
+  var steps = [];
+  var pcts = state.rampPct;
+  var reps = state.rampReps;
+  for(var i=0;i<pcts.length;i++){
+    var w = workingWeight * (pcts[i]/100);
+    steps.push({
+      label: pcts[i]===0 ? "Empty Bar" : (pcts[i]+"% × "+ (reps[i]||"")),
+      weight: w
+    });
+  }
+  steps.push({label:"Work Set", weight: workingWeight});
+  return steps;
+}
+
+function enterRamp(){
+  if(currentWeight===null || currentWeight<=0) return;
+  rampActive = true;
+  rampSteps = buildRamp(currentWeight);
+  rampIndex = 0;
+  document.getElementById("rampBar").classList.add("active");
+  document.getElementById("rampToggleBtn").classList.add("on");
+  renderRampDots();
+  showRampStep();
+}
+function exitRamp(){
+  if(!rampActive) return;
+  rampActive = false;
+  document.getElementById("rampBar").classList.remove("active");
+  document.getElementById("rampToggleBtn").classList.remove("on");
+  document.getElementById("rampLabel").textContent = "";
+}
+function renderRampDots(){
+  var wrap = document.getElementById("rampDots");
+  wrap.innerHTML = "";
+  rampSteps.forEach(function(s,i){
+    var d = document.createElement("div");
+    d.className = "rdot" + (i===rampIndex ? " on" : (i<rampIndex ? " done":""));
+    wrap.appendChild(d);
+  });
+}
+function hapticTick(){
+  if(navigator.vibrate){ navigator.vibrate(10); }
+}
+
+function showRampStep(){
+  hapticTick();
+  var step = rampSteps[rampIndex];
+  document.getElementById("rampLabel").textContent = step.label.toUpperCase();
+  var rawW = Math.max(currentBarWeight(), step.weight);
+  var w = findNearestAchievableWeight(rawW, state.unit);
+  var el = document.getElementById("weightDisplay");
+  el.innerHTML = fmtNum(w) + '<span class="unit">'+state.unit+'</span>';
+  var result = solveWeight(w, state.unit);
+  renderBreakdown(result);
+  renderBarbell(result);
+  renderRampDots();
+}
+
+document.getElementById("rampPrev").onclick = function(){
+  if(rampIndex>0){ rampIndex--; showRampStep(); }
+};
+document.getElementById("rampNext").onclick = function(){
+  if(rampIndex<rampSteps.length-1){ rampIndex++; showRampStep(); }
+  else { exitRamp(); recompute(false); }
+};
+document.getElementById("rampToggleBtn").onclick = function(){
+  if(rampActive) exitRamp(); else enterRamp();
+  if(!rampActive) recompute(false);
+};
+
+// swipe support on barbell area during ramp
+(function(){
+  var startX=null;
+  var area = document.getElementById("barbellWrap");
+  area.addEventListener("touchstart", function(e){
+    if(!rampActive) return;
+    startX = e.touches[0].clientX;
+  }, {passive:true});
+  area.addEventListener("touchend", function(e){
+    if(!rampActive || startX===null) return;
+    var endX = e.changedTouches[0].clientX;
+    var dx = endX - startX;
+    if(Math.abs(dx) > 40){
+      if(dx<0) document.getElementById("rampNext").click();
+      else document.getElementById("rampPrev").click();
+    }
+    startX=null;
+  }, {passive:true});
+})();
+
+/* ---------------- stepper buttons ---------------- */
+document.querySelectorAll(".stepBtn").forEach(function(btn){
+  btn.addEventListener("click", function(){
+    var d = parseFloat(btn.getAttribute("data-d"));
+    adjustWeight(d);
+  });
+});
+
+/* ---------------- numpad ---------------- */
+var numOverlay = document.getElementById("numOverlay");
+var numDisplay = document.getElementById("numDisplay");
+document.getElementById("numpadBtn").onclick = function(){
+  numpadBuffer = "";
+  numDisplay.textContent = "0";
+  numOverlay.classList.add("show");
+};
+document.querySelectorAll("#numGrid button").forEach(function(btn){
+  btn.addEventListener("click", function(){
+    var k = btn.getAttribute("data-k");
+    if(k==="back"){ numpadBuffer = numpadBuffer.slice(0,-1); }
+    else if(k==="clear"){ numpadBuffer = ""; }
+    else if(k==="go"){
+      var w = parseFloat(numpadBuffer);
+      if(!isNaN(w) && w>=0){ setWeight(w); }
+      numOverlay.classList.remove("show");
+      return;
+    } else if(k==="."){
+      if(numpadBuffer.indexOf(".")===-1) numpadBuffer += ".";
+    } else {
+      if(numpadBuffer.length<6) numpadBuffer += k;
+    }
+    numDisplay.textContent = numpadBuffer || "0";
+  });
+});
+
+/* ---------------- overlays generic close ---------------- */
+document.querySelectorAll("[data-close]").forEach(function(btn){
+  btn.addEventListener("click", function(){
+    document.getElementById(btn.getAttribute("data-close")).classList.remove("show");
+  });
+});
+document.getElementById("gearBtn").onclick = function(){
+  buildSettingsUI();
+  document.getElementById("settingsOverlay").classList.add("show");
+};
+
+/* ---------------- settings UI ---------------- */
+function buildSettingsUI(){
+  // units
+  document.querySelectorAll("#unitOpts .optBtn").forEach(function(b){
+    b.classList.toggle("sel", b.getAttribute("data-unit")===state.unit);
+    b.onclick = function(){
+      if(state.unit === b.getAttribute("data-unit")) return;
+      convertUnitSwitch(b.getAttribute("data-unit"));
+      saveState();
+      buildSettingsUI();
+      recompute(false);
+    };
+  });
+
+  // bar options
+  var barOptsEl = document.getElementById("barOpts");
+  barOptsEl.innerHTML = "";
+  BAR_OPTIONS.forEach(function(o){
+    var b = document.createElement("button");
+    b.className = "optBtn" + (state.barId===o.id ? " sel":"");
+    b.textContent = o.id==="custom" ? "Custom" : o.label + " (" + (state.unit==="kg"?o.kg:o.lb) + (o.id==="custom"?"":" "+state.unit) + ")";
+    b.onclick = function(){
+      state.barId = o.id;
+      saveState();
+      buildSettingsUI();
+      recompute(false);
+    };
+    barOptsEl.appendChild(b);
+  });
+  var customWrap = document.getElementById("customBarWrap");
+  customWrap.style.display = state.barId==="custom" ? "flex":"none";
+  document.getElementById("customBarUnit").textContent = state.unit;
+  var input = document.getElementById("customBarInput");
+  input.value = state.unit==="kg" ? state.customBarKg : state.customBarLb;
+  input.oninput = function(){
+    var v = parseFloat(input.value)||0;
+    if(state.unit==="kg") state.customBarKg = v; else state.customBarLb = v;
+    saveState();
+    recompute(false);
+  };
+
+  // collar toggle
+  var collarToggle = document.getElementById("collarToggle");
+  collarToggle.classList.toggle("on", !!state.collars);
+  collarToggle.onclick = function(){
+    state.collars = !state.collars;
+    saveState();
+    buildSettingsUI();
+    recompute(false);
+  };
+
+  // inventory
+  var invList = document.getElementById("inventoryList");
+  invList.innerHTML = "";
+  denomsForUnit(state.unit).forEach(function(d){
+    var row = document.createElement("div");
+    row.className = "row";
+    var color = PLATE_COLOR[d] || "var(--plate2_5)";
+    row.innerHTML =
+      '<div class="lname"><span class="swatch" style="background:'+color+'"></span>'+fmtNum(d)+' '+state.unit+'</div>'+
+      '<div class="countCtl">'+
+        '<button data-dec="'+d+'">–</button>'+
+        '<div class="cval" id="cval-'+d+'">'+(state.inventory[state.unit][d]||0)+'</div>'+
+        '<button data-inc="'+d+'">+</button>'+
+      '</div>';
+    invList.appendChild(row);
+  });
+  invList.querySelectorAll("[data-inc]").forEach(function(b){
+    b.onclick = function(){
+      var d = b.getAttribute("data-inc");
+      state.inventory[state.unit][d] = (state.inventory[state.unit][d]||0)+1;
+      document.getElementById("cval-"+d).textContent = state.inventory[state.unit][d];
+      saveState(); recompute(false);
+    };
+  });
+  invList.querySelectorAll("[data-dec]").forEach(function(b){
+    b.onclick = function(){
+      var d = b.getAttribute("data-dec");
+      state.inventory[state.unit][d] = Math.max(0,(state.inventory[state.unit][d]||0)-1);
+      document.getElementById("cval-"+d).textContent = state.inventory[state.unit][d];
+      saveState(); recompute(false);
+    };
+  });
+
+  // ramp pct
+  var rampList = document.getElementById("rampPctList");
+  rampList.innerHTML = "";
+  state.rampPct.forEach(function(p,i){
+    var row = document.createElement("div");
+    row.className = "rampPctRow";
+    row.innerHTML =
+      '<label>Step '+(i+1)+'</label>'+
+      '<input type="number" data-i="'+i+'" class="pctInput" value="'+p+'"> %'+
+      '<input type="number" data-i="'+i+'" class="repInput" value="'+(state.rampReps[i]||1)+'" style="margin-left:8px;"> reps';
+    rampList.appendChild(row);
+  });
+  rampList.querySelectorAll(".pctInput").forEach(function(inp){
+    inp.oninput = function(){
+      var i = parseInt(inp.getAttribute("data-i"),10);
+      state.rampPct[i] = parseFloat(inp.value)||0;
+      saveState();
+    };
+  });
+  rampList.querySelectorAll(".repInput").forEach(function(inp){
+    inp.oninput = function(){
+      var i = parseInt(inp.getAttribute("data-i"),10);
+      state.rampReps[i] = parseInt(inp.value,10)||1;
+      saveState();
+    };
+  });
+}
+
+function convertUnitSwitch(newUnit){
+  // convert current displayed weight roughly, but plates/inventory are unit-native (kept separately)
+  if(currentWeight!==null){
+    if(newUnit==="kg" && state.unit==="lb") currentWeight = Math.round((currentWeight/2.20462)*4)/4;
+    else if(newUnit==="lb" && state.unit==="kg") currentWeight = Math.round((currentWeight*2.20462)*4)/4;
+  }
+  state.unit = newUnit;
+}
+
+/* ---------------- % of 1RM mode ---------------- */
+var RM_PCTS = [70,75,80,85,90];
+var rmSelectedPct = null;
+
+function buildLiftPicker(){
+  var wrap = document.getElementById("liftPicker");
+  wrap.innerHTML = "";
+  state.lifts.forEach(function(lift, i){
+    var b = document.createElement("button");
+    b.className = "liftBtn" + (state.activeLift===i ? " sel":"");
+    b.textContent = lift.name;
+    b.onclick = function(){
+      state.activeLift = i;
+      saveState();
+      refreshRMOverlay();
+    };
+    wrap.appendChild(b);
+  });
+  var addBtn = document.createElement("button");
+  addBtn.className = "addLiftBtn";
+  addBtn.textContent = "+ Lift";
+  addBtn.onclick = function(){
+    var name = prompt("Lift name:");
+    if(name){
+      state.lifts.push({name:name, lb:null, kg:null});
+      state.activeLift = state.lifts.length-1;
+      saveState();
+      refreshRMOverlay();
+    }
+  };
+  wrap.appendChild(addBtn);
+}
+
+function refreshRMOverlay(){
+  buildLiftPicker();
+  document.getElementById("rmUnitLabel").textContent = state.unit;
+  var lift = state.lifts[state.activeLift];
+  var rmVal = lift ? (state.unit==="kg" ? lift.kg : lift.lb) : null;
+  document.getElementById("rmInput").value = rmVal || "";
+
+  var pctRow = document.getElementById("rmPctRow");
+  pctRow.innerHTML = "";
+  RM_PCTS.forEach(function(p){
+    var b = document.createElement("button");
+    b.className = "pctChip" + (rmSelectedPct===p ? " sel":"");
+    b.textContent = p+"%";
+    b.onclick = function(){
+      rmSelectedPct = p;
+      computeRM();
+    };
+    pctRow.appendChild(b);
+  });
+  computeRM(true);
+}
+
+function computeRM(skipHighlightRefresh){
+  var lift = state.lifts[state.activeLift];
+  var rmVal = lift ? (state.unit==="kg" ? lift.kg : lift.lb) : null;
+  var resEl = document.getElementById("rmResult");
+  var subEl = document.getElementById("rmSub");
+  if(!rmVal || !rmSelectedPct){
+    resEl.textContent = "—";
+    subEl.textContent = rmVal ? "Tap a percentage" : "Enter your 1RM";
+    return;
+  }
+  var target = rmVal * rmSelectedPct/100;
+  var result = solveWeight(target, state.unit);
+  if(result.ok){
+    resEl.textContent = fmtNum(target) + " " + state.unit;
+    var arr = comboToArray(result.perSideCombo);
+    subEl.textContent = arr.length ? "PER SIDE: " + arr.map(fmtNum).join(" + ") : "bar only";
+  } else {
+    var nearest = result.alternatives.sort(function(a,b){return Math.abs(a-target)-Math.abs(b-target);})[0];
+    resEl.textContent = fmtNum(nearest) + " " + state.unit;
+    subEl.textContent = "Closest achievable to " + fmtNum(target);
+    target = nearest;
+  }
+  document.getElementById("rmResult").onclick = function(){
+    document.getElementById("rmOverlay").classList.remove("show");
+    setWeight(target);
+  };
+}
+
+document.getElementById("rmInput").addEventListener("input", function(){
+  var lift = state.lifts[state.activeLift];
+  if(!lift) return;
+  var v = parseFloat(this.value)||null;
+  if(state.unit==="kg") lift.kg = v; else lift.lb = v;
+  saveState();
+  computeRM();
+});
+document.getElementById("rmModeBtn").onclick = function(){
+  refreshRMOverlay();
+  document.getElementById("rmOverlay").classList.add("show");
+};
+
+/* ---------------- Dumbbell mode ---------------- */
+function refreshDBOverlay(){
+  document.getElementById("dbUnitLabel").textContent = state.unit;
+  document.getElementById("dbIncInput").value = (state.dbIncrements[state.unit]||[]).join(", ");
+  computeDB();
+}
+function parseDBIncrements(){
+  var raw = document.getElementById("dbIncInput").value;
+  var arr = raw.split(",").map(function(s){ return parseFloat(s.trim()); }).filter(function(n){ return !isNaN(n) && n>=0; });
+  arr.sort(function(a,b){return a-b;});
+  state.dbIncrements[state.unit] = arr;
+  saveState();
+}
+function computeDB(){
+  var input = document.getElementById("dbInput");
+  var target = parseFloat(input.value);
+  var resEl = document.getElementById("dbResult");
+  var subEl = document.getElementById("dbSub");
+  var altRow = document.getElementById("dbAltRow");
+  altRow.innerHTML = "";
+  if(isNaN(target)){
+    resEl.textContent = "—";
+    subEl.textContent = "Enter a target weight";
+    return;
+  }
+  var incs = state.dbIncrements[state.unit]||[];
+  if(incs.length===0){
+    resEl.textContent = "—";
+    subEl.textContent = "Add rack increments below";
+    return;
+  }
+  var exact = incs.filter(function(w){ return Math.abs(w-target)<1e-6; })[0];
+  if(exact!==undefined){
+    resEl.textContent = fmtNum(exact) + " " + state.unit;
+    subEl.textContent = "Exact match in your rack";
+    return;
+  }
+  var below=null, above=null;
+  incs.forEach(function(w){
+    if(w<=target) below=w;
+    if(w>=target && above===null) above=w;
+  });
+  var options = [below,above].filter(function(w){return w!==null;});
+  options.sort(function(a,b){ return Math.abs(a-target)-Math.abs(b-target); });
+  var nearest = options[0];
+  resEl.textContent = fmtNum(nearest) + " " + state.unit;
+  subEl.textContent = "Nearest available (target " + fmtNum(target) + ")";
+  options.slice(0,2).sort(function(a,b){return a-b;}).forEach(function(w){
+    var b = document.createElement("button");
+    b.className = "chip alt";
+    b.textContent = fmtNum(w) + " " + state.unit;
+    b.onclick = function(){ input.value=w; computeDB(); };
+    altRow.appendChild(b);
+  });
+}
+document.getElementById("dbInput").addEventListener("input", computeDB);
+document.getElementById("dbIncInput").addEventListener("change", function(){ parseDBIncrements(); computeDB(); });
+document.getElementById("dbModeBtn").onclick = function(){
+  refreshDBOverlay();
+  document.getElementById("dbOverlay").classList.add("show");
+};
+
+/* ---------------- Superset strip-order mode ---------------- */
+function computeStrip(){
+  var aVal = parseFloat(document.getElementById("stripAInput").value);
+  var bVal = parseFloat(document.getElementById("stripBInput").value);
+  var headline = document.getElementById("stripHeadline");
+  var removeEl = document.getElementById("stripRemove");
+  var addEl = document.getElementById("stripAdd");
+  document.getElementById("stripABreak").textContent = "";
+  document.getElementById("stripBBreak").textContent = "";
+  if(isNaN(aVal) || isNaN(bVal)){
+    headline.textContent = "Enter both weights";
+    removeEl.textContent = "—"; addEl.textContent = "—";
+    return;
+  }
+  var rA = solveWeight(aVal, state.unit);
+  // Bias B's solution toward reusing A's plates so the changeover needs the fewest swaps.
+  var rB = solveWeight(bVal, state.unit, rA.ok ? rA.perSideCombo : null);
+  document.getElementById("stripABreak").textContent = rA.ok ? comboToArray(rA.perSideCombo).map(fmtNum).join(" + ") || "bar only" : "not achievable";
+  document.getElementById("stripBBreak").textContent = rB.ok ? comboToArray(rB.perSideCombo).map(fmtNum).join(" + ") || "bar only" : "not achievable";
+
+  if(!rA.ok || !rB.ok){
+    headline.textContent = "One or both weights aren't achievable with your inventory.";
+    removeEl.textContent = "—"; addEl.textContent = "—";
+    return;
+  }
+  var comboA = rA.perSideCombo, comboB = rB.perSideCombo;
+  var denoms = {};
+  Object.keys(comboA).forEach(function(d){ denoms[d]=true; });
+  Object.keys(comboB).forEach(function(d){ denoms[d]=true; });
+  var toRemove=[], toAdd=[];
+  Object.keys(denoms).map(Number).sort(function(x,y){return y-x;}).forEach(function(d){
+    var ca = comboA[d]||0, cb = comboB[d]||0;
+    if(ca>cb){ for(var i=0;i<ca-cb;i++) toRemove.push(d); }
+    if(cb>ca){ for(var i=0;i<cb-ca;i++) toAdd.push(d); }
+  });
+  removeEl.textContent = toRemove.length ? toRemove.map(fmtNum).join(" + ") : "nothing";
+  addEl.textContent = toAdd.length ? toAdd.map(fmtNum).join(" + ") : "nothing";
+  var swaps = toRemove.length + toAdd.length;
+  headline.textContent = swaps===0 ? "Same load — no changes needed." : (swaps + " plate move" + (swaps===1?"":"s") + " to go from A to B.");
+}
+document.getElementById("stripAInput").addEventListener("input", computeStrip);
+document.getElementById("stripBInput").addEventListener("input", computeStrip);
+document.getElementById("stripModeBtn").onclick = function(){
+  document.getElementById("stripAInput").value = currentWeight ? fmtNum(currentWeight) : "";
+  computeStrip();
+  document.getElementById("stripOverlay").classList.add("show");
+};
+
+/* ---------------- init ---------------- */
+function init(){
+  renderRecall();
+  currentWeight = currentBarWeight();
+  recompute(false);
+
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("sw.js").catch(function(){});
+  }
+}
+init();
+
+})();
+</script>
+</body>
+</html>
