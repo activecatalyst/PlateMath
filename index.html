@@ -20,14 +20,14 @@
     --text:#F5F5F2;
     --dim:#8A8A90;
     --dimmer:#5A5A60;
-    --accent:#F26419;
-    --accent-dim:#5c2a10;
-    --plate45:#C1440E;
-    --plate35:#D9822B;
-    --plate25:#7C8A9B;
-    --plate10:#6B6E73;
-    --plate5:#54575c;
-    --plate2_5:#43464a;
+    --accent:#2E8CE0;
+    --accent-dim:#0f2d4a;
+    --plate45:#1D4F91;
+    --plate35:#2E6FB8;
+    --plate25:#6B8CA8;
+    --plate10:#5C6B78;
+    --plate5:#4B5760;
+    --plate2_5:#3A4348;
     --danger:#B33A3A;
     --good:#3AA66B;
   }
@@ -658,32 +658,36 @@ function renderBarbell(result){
     return {d:d,t:t};
   }
 
-  // build from bar outward: collar first, then plates largest->smallest already sorted desc
-  var xLeft = sleeveLeft + 6;
-  var xRight = sleeveRight - 6;
+  // Build outward from the center grip: largest plate goes on first (inboard,
+  // closest to center), progressively smaller plates stack outboard from there,
+  // and the collar (if any) caps the very outer end over the last plate.
+  var gapHalf = 22;
+  var centerX = W/2;
+  var xLeftEdge = centerX - gapHalf;   // moves left (outboard) as plates are added
+  var xRightEdge = centerX + gapHalf;  // moves right (outboard) as plates are added
 
-  // left collar
-  if(state.collars){
-    html += rectPlate(xLeft, cy, collarW, 40, "#8a8a90", null);
-    xLeft += collarW+2;
-  }
   combo.forEach(function(w){
     var sz = plateSize(w);
     var color = PLATE_COLOR[w] || "var(--plate2_5)";
-    html += rectPlate(xLeft, cy, sz.t, sz.d, color, w);
-    xLeft += sz.t + 3;
+    xLeftEdge -= sz.t;
+    html += rectPlate(xLeftEdge, cy, sz.t, sz.d, color, w);
+    xLeftEdge -= 3;
   });
-
   if(state.collars){
-    xRight -= collarW+2;
-    html += rectPlate(xRight, cy, collarW, 40, "#8a8a90", null);
+    xLeftEdge -= collarW;
+    html += rectPlate(xLeftEdge, cy, collarW, 40, "#8a8a90", null);
   }
+
   combo.forEach(function(w){
     var sz = plateSize(w);
     var color = PLATE_COLOR[w] || "var(--plate2_5)";
-    xRight -= sz.t+3;
-    html += rectPlate(xRight, cy, sz.t, sz.d, color, w, true);
+    html += rectPlate(xRightEdge, cy, sz.t, sz.d, color, w, true);
+    xRightEdge += sz.t + 3;
   });
+  if(state.collars){
+    html += rectPlate(xRightEdge, cy, collarW, 40, "#8a8a90", null);
+    xRightEdge += collarW;
+  }
 
   svg.innerHTML = html;
 
