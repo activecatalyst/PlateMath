@@ -26,6 +26,7 @@ Everything lives on one screen — no menus, no tabs.
 - **Breakdown line** — "PER SIDE: 45 + 45 + 10" spells out the diagram in text.
 - **Not achievable** — if your target can't be hit exactly with your plate inventory, the breakdown says so and shows the two nearest achievable weights as tappable chips.
 - **Recall chips** (top row) — your last 6 computed weights, one tap to reload any of them.
+- **Clear Bar** — one tap resets the target back to bar weight only (no plates). Also exits warmup ramp mode if you're mid-ramp.
 
 ## Warmup ramp
 

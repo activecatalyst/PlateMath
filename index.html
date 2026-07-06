@@ -131,11 +131,12 @@
     display:flex; gap:10px; padding-top:8px;
   }
   #actions button{
-    flex:1; padding:16px 0; border-radius:16px; font-size:17px; font-weight:700;
+    flex:1; padding:16px 4px; border-radius:16px; font-size:15px; font-weight:700;
     background:var(--bg3); border:1px solid var(--line);
   }
   #rampToggleBtn.on{ background:var(--accent); color:#111; border-color:var(--accent); }
   #numpadBtn{ background:var(--bg2); }
+  #clearBarBtn{ background:var(--bg2); color:var(--dim); }
 
   #modeRow{ display:flex; gap:8px; padding-top:8px; }
   #modeRow button{
@@ -276,6 +277,7 @@
   <div id="actions">
     <button id="rampToggleBtn">Warmup Ramp</button>
     <button id="numpadBtn">Enter Weight</button>
+    <button id="clearBarBtn">Clear Bar</button>
   </div>
   <div id="modeRow">
     <button id="rmModeBtn">% of 1RM</button>
@@ -824,6 +826,12 @@ document.getElementById("rampNext").onclick = function(){
 document.getElementById("rampToggleBtn").onclick = function(){
   if(rampActive) exitRamp(); else enterRamp();
   if(!rampActive) recompute(false);
+};
+
+document.getElementById("clearBarBtn").onclick = function(){
+  exitRamp();
+  currentWeight = currentBarWeight();
+  recompute(false);
 };
 
 // swipe support on barbell area during ramp
